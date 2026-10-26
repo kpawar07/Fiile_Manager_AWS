@@ -1,54 +1,131 @@
 # Smart Cloud File Manager
 
-Starter mini-project: React + Vite frontend and a Python AWS Lambda backend.
+A mini-project demonstrating a React + Vite frontend and a Python AWS Lambda backend for serverless cloud file management.
 
 ## Features
-- Upload files to a private S3 bucket using short-lived presigned URLs
-- List files from DynamoDB metadata
-- Download using short-lived presigned URLs
-- Delete from the active list (S3 versioning retains historical versions)
-- View versions and restore an earlier S3 version
-- File size and upload date display
 
-## AWS resources to create
-1. S3 bucket with Block Public Access ON and Versioning ENABLED.
-2. S3 CORS allowing `http://localhost:5173` with PUT, GET, HEAD.
-3. DynamoDB table `SmartFileMetadata`, partition key `fileId` (String).
-4. Lambda execution role with `AWSLambdaBasicExecutionRole` and narrowly scoped S3/DynamoDB permissions.
-5. Python 3.12 Lambda function using `backend/lambda_function.py` as `lambda_function.handler`.
-6. Environment variables on Lambda:
-   - `BUCKET_NAME` = your bucket name
-   - `TABLE_NAME` = `SmartFileMetadata`
-   - `ALLOWED_ORIGIN` = `http://localhost:5173`
-   AWS_REGION is supplied by Lambda.
-7. API Gateway HTTP API with Lambda proxy integration, route `$default` (all paths/methods), and CORS:
-   - Allowed origin: `http://localhost:5173`
-   - Allowed methods: GET, POST, DELETE, OPTIONS
-   - Allowed headers: Content-Type
-8. Copy the API base URL into `frontend/.env` as `VITE_API_BASE_URL`.
+- Upload files to a private Amazon S3 bucket using short-lived presigned URLs.
+- List files using metadata stored in Amazon DynamoDB.
+- Download files using short-lived presigned URLs.
+- Delete files from the active list while retaining historical S3 versions where applicable.
+- View S3 object versions and restore an earlier version.
+- Display file size and upload date.
 
-## Deploy Lambda
-Create a Lambda function with Python 3.12, upload `backend/lambda_function.py` as a ZIP or paste its content into the console editor, set handler to `lambda_function.handler`, set the execution role, and add the environment variables above. Boto3 is available in the standard Python Lambda runtime.
+## Project Structure
 
-## Run the frontend
-Install Node.js LTS, then from the `frontend` directory:
+```text
+Smart-Cloud-File-Manager/
+├── backend/
+│   └── lambda_function.py
+├── frontend/
+│   ├── src/
+│   ├── .env.example
+│   ├── index.html
+│   ├── package.json
+│   └── package-lock.json
+├── .gitignore
+└── README.md
+```
+
+## AWS Resources
+
+Configure the following resources in your AWS account:
+
+1. **Amazon S3:** Create a bucket with Block Public Access enabled and Versioning enabled.
+2. **S3 CORS:** Allow the local development origin `http://localhost:5173` with the required PUT, GET, and HEAD methods.
+3. **Amazon DynamoDB:** Create a table named `SmartFileMetadata` with partition key `fileId` (String).
+4. **AWS IAM:** Create a Lambda execution role with `AWSLambdaBasicExecutionRole` and appropriately scoped S3 and DynamoDB permissions.
+5. **AWS Lambda:** Use Python 3.12 and configure the handler as `lambda_function.handler`.
+6. **Lambda environment variables:**
+   - `BUCKET_NAME`: Your S3 bucket name.
+   - `TABLE_NAME`: `SmartFileMetadata`.
+   - `ALLOWED_ORIGIN`: `http://localhost:5173`.
+7. **Amazon API Gateway:** Create an HTTP API connected to Lambda with the required routes and CORS settings.
+8. **Frontend configuration:** Set `VITE_API_BASE_URL` to your API Gateway invoke URL in the local frontend `.env` file.
+
+The Lambda execution role should grant only the permissions needed by this application.
+
+## Deploy the Lambda Backend
+
+Create an AWS Lambda function using Python 3.12. Upload `backend/lambda_function.py` or paste its contents into the Lambda editor.
+
+Set the handler to:
+
+```text
+lambda_function.handler
+```
+
+Configure the execution role and the environment variables listed above. Review the deployed code and permissions before testing.
+
+## Run the Frontend Locally
+
+Install Node.js LTS.
+
+Open a terminal in the `frontend` directory and run:
+
 ```bash
 npm install
-cp .env.example .env
-# Edit .env and set your API URL
+```
+
+Create a local `.env` file from the example.
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `.env` and set the actual API Gateway URL:
+
+```text
+VITE_API_BASE_URL=https://YOUR_API_ID.execute-api.YOUR_REGION.amazonaws.com
+```
+
+Then start the development server:
+
+```bash
 npm run dev
 ```
-Open the local URL Vite prints, normally `http://localhost:5173`.
 
-## Test checklist
-- Upload a small PDF or image
-- Confirm it appears in the list
-- Download it
-- Delete it and confirm it disappears from the active list
-- Upload multiple versions of the same object key if testing version history directly in S3; the starter app creates a unique key per upload, so version history will usually show one version per file until you add a replace-file feature
-- Test restore on a file with at least two S3 versions
+Open the local URL printed by Vite, usually `http://localhost:5173`.
 
-## Important limitations and security
-This is an educational demo, not production-ready. The API currently has no user authentication; do not put sensitive files in it or expose it publicly. Add Amazon Cognito/API authorization and user-specific ownership checks before real use. Restrict API Gateway access where possible. The demo limits uploads to 10 MB and scans the DynamoDB table, which is acceptable only for small demonstrations.
+**Do not commit your real `.env` file or AWS credentials.** The `.env.example` file should contain placeholders only.
 
-The frontend requests a presigned PUT URL then uploads directly to S3. The Lambda verifies the object exists before writing metadata. Presigned URLs are bearer tokens: do not log or share them. Review current AWS pricing and billing alerts before deployment, and delete resources after the project demo.
+## Testing Checklist
+
+- Upload a small test file.
+- Confirm the file appears in the application list.
+- Download the uploaded file.
+- Delete a disposable test file and confirm it disappears from the active list.
+- Test version listing using an object that has multiple S3 versions.
+- Test restoring an earlier version.
+
+The starter application creates a unique S3 key for each uploaded file. Consequently, uploading the same filename again may not create another version of the same object key. Test version history against an object that actually has multiple versions.
+
+## Security and Limitations
+
+This is an educational mini-project, not a production-ready file-sharing service.
+
+- User authentication and per-user authorization are not implemented.
+- Do not store confidential files or expose the application publicly without additional security controls.
+- Consider Amazon Cognito or another suitable authentication mechanism and enforce ownership checks for file operations.
+- Presigned URLs act as bearer tokens. Do not log or share them.
+- The demonstration limits file uploads to 10 MB and scans the DynamoDB table, making it suitable only for small demonstrations.
+- Review AWS pricing, storage usage, and billing alerts before deployment.
+
+Delete unused AWS resources when the demonstration is complete to reduce the possibility of ongoing charges.
+
+## Technologies Used
+
+- React and Vite
+- Python and AWS Lambda
+- Amazon API Gateway
+- Amazon S3
+- Amazon DynamoDB
+- AWS IAM
+
+## Repository
+
+GitHub repository: `Fiile_Manager_AWS`
+
+
