@@ -1,0 +1,24 @@
+# Frontend dependencies and build files
+node_modules/
+dist/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# AWS credentials and private keys
+.aws/
+credentials
+*.pem
+*.key
+
+# Local editor settings
+.vscode/
